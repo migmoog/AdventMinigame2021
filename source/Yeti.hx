@@ -43,7 +43,6 @@ class Yeti extends FlxNestedSprite
 
 		if (sliceTime <= 7.85)
 		{
-			trace("picked new point");
 			sliceTime = 0;
 			target.put();
 
@@ -66,8 +65,8 @@ class Yeti extends FlxNestedSprite
 
 		if (v == waitForStart)
 		{
-			acl += 1.5;
-			maxAcl += 1.5;
+			acl += 5.5;
+			maxAcl += 5.5;
 		}
 
 		return state = v;

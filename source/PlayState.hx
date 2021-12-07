@@ -1,5 +1,7 @@
 package;
 
+import flixel.system.FlxAssets;
+import FlxNestedTextSprite;
 import flixel.group.FlxGroup;
 import flixel.FlxG;
 import flixel.FlxSprite;
@@ -18,6 +20,9 @@ import flixel.util.FlxTimer;
 	BIG SCREEN that shows order of color spots to walk on across the room
 	YETI slowly accelerates after you making you freak the fuck out
 	If you get order wrong, yeti fucking kills you    
+
+	TODO: for duplicate nums, make the text appear only if it's a dupe. that maintains the memory aspect of the 
+	"simon says"-ing 
 **/
 class PlayState extends FlxState
 {
@@ -35,6 +40,7 @@ class PlayState extends FlxState
 	var spots:FlxTypedGroup<Light>;
 
 	var tileSeq:Array<LightColor>;
+	var allColors:Array<LightColor> = [RED, BLUE, GREEN];
 	var seqMax:Int = 3;
 	var seqTimer:FlxTimer = new FlxTimer();
 
@@ -50,7 +56,7 @@ class PlayState extends FlxState
 		board.screenCenter(X);
 		for (i in 0...3)
 		{
-			var s = new Light(0, 0, 'assets/images/spot.png');
+			var s = new Light(0, 0);
 			s.color = s.clr = switch i
 			{
 				case 0: RED;
@@ -59,7 +65,7 @@ class PlayState extends FlxState
 				default: RED;
 			};
 			s.relativeX = i * (board.width / 3);
-			s.relativeY = board.width / 4;
+			s.relativeY = board.width / 8;
 			
 			board.add(s);
 			s.visible = false;
@@ -78,7 +84,6 @@ class PlayState extends FlxState
 		add(yeti);
 
 		pickSequence();
-		playBoard();
 
 		super.create();
 	}
@@ -97,19 +102,20 @@ class PlayState extends FlxState
 		super.update(elapsed);
 	}
 
-	function executeSpotOverlap(p:FlxSprite, s:Light) {
+	function executeSpotOverlap(p:FlxSprite, s:Light)
+	{
 		s.destroy();
 		currentSpotIndex++;
 
-		trace('members remaining in spots: ${spots.members.length}');
-		if (spots.getFirstAlive() == null) {
+		if (spots.getFirstAlive() == null)
+		{
 			pickSequence();
-			playBoard();
 		}
 	}
 
-	function processSpotOverlap(p:FlxSprite, s:Light):Bool {
-		return s.clr == tileSeq[currentSpotIndex];
+	function processSpotOverlap(p:FlxSprite, s:Light):Bool
+	{
+		return s.clr == tileSeq[currentSpotIndex] && s.index == currentSpotIndex;
 	}
 
 	function pickSequence()
@@ -117,7 +123,9 @@ class PlayState extends FlxState
 		tileSeq = [];
 
 		for (i in 0...seqMax++)
-			tileSeq.push(FlxG.random.getObject([LightColor.RED, LightColor.BLUE, LightColor.GREEN]));
+			tileSeq.push(FlxG.random.getObject(allColors));
+
+		playBoard();
 	}
 
 	function playBoard(?_:FlxTimer)
@@ -130,8 +138,6 @@ class PlayState extends FlxState
 			var l:Light = cast light;
 			if (l.clr == tileSeq[lightsShown] && !light.visible)
 			{
-				trace("Found the light");
-
 				light.visible = true;
 				break;
 			}
@@ -146,9 +152,7 @@ class PlayState extends FlxState
 			}
 
 			if (lightsShown < tileSeq.length)
-			{
 				seqTimer.start(lightShowTime, playBoard);
-			}
 			else
 			{
 				seqTimer.start(lightShowTime, (_) ->
@@ -159,7 +163,6 @@ class PlayState extends FlxState
 
 					lightShowTime -= 0.05;
 					boardFinished();
-					trace("finished");
 				});
 			}
 		});
@@ -168,18 +171,33 @@ class PlayState extends FlxState
 
 	function boardFinished()
 	{
-		// TODO: make this fn set the tilemap tiles and activate the yeti
-		trace(tileSeq[currentSpotIndex]);
-		
+		var duplicateColors:Int = 0;
+		var tempClr:LightColor = tileSeq[0];
 		for (i in 0...tileSeq.length)
 		{
+			if (i != 0 && tileSeq[i] == tempClr)
+				trace(duplicateColors++); 
+			
 			var spt = new Light(
 				FlxG.random.int(0, 14) * 32,
 				FlxG.random.int(0, 7) * 32,
-				'assets/images/spot.png'
+				i
 			);
-			spt.color = spt.clr = tileSeq[i];
+
+			if (duplicateColors <= 1)
+			{
+				spt.color = spt.clr = tileSeq[i];
+			}
+			else
+			{
+				// FIXME won't brighten colors, probably need new design
+				spt.clr = tileSeq[i];
+				var asColor:FlxColor = cast spt.clr;
+				spt.color = FlxColor.fromHSB(asColor.hue, asColor.saturation - (1-(i*.35)), (10 - i) * 0.35, 1);
+			}
 			spots.add(spt);
+
+			tempClr = tileSeq[i];
 		}
 
 		yeti.state = yeti.hunt;
@@ -229,8 +247,26 @@ class PlayState extends FlxState
 
 class Light extends FlxNestedSprite
 {
-	public var clr:LightColor;
-}
+	public var index:Int;
+	public var clr:LightColor = RED;
+
+	var txt:FlxNestedTextSprite;
+	
+	public function new(x:Float, y:Float, ?index:Int)
+	{
+		super(x, y, 'assets/images/spot.png');
+		this.index = index;
+
+		// TODO: wait for markl's answer on the path
+		if (index != null) {
+			txt = new FlxNestedTextSprite(Std.string(index), FlxAssets.FONT_DEFAULT, 10, 0, FlxColor.BLACK, -1, "center", 0);
+			add(txt);
+			txt.relativeX = (width / 2) - (txt.width / 2);
+			txt.relativeY = (height / 2) - (txt.height / 2);
+		}
+	}
+
+} 
 
 enum abstract LightColor(FlxColor) to FlxColor
 {
