@@ -12,18 +12,6 @@ import flixel.util.FlxColor;
 import flixel.util.FlxSpriteUtil;
 import flixel.util.FlxTimer;
 
-/**
-	IDEA: Simon says style thing instead of pacman clone
-	Spots appear around teh room you gotta run to, jump on top 
-
-
-	BIG SCREEN that shows order of color spots to walk on across the room
-	YETI slowly accelerates after you making you freak the fuck out
-	If you get order wrong, yeti fucking kills you    
-
-	TODO: for duplicate nums, make the text appear only if it's a dupe. that maintains the memory aspect of the 
-	"simon says"-ing 
-**/
 class PlayState extends FlxState
 {
 	var yeti:Yeti;
@@ -48,6 +36,7 @@ class PlayState extends FlxState
 
 	static private var lightsShown:Int = 0;
 	static private var lightShowTime:Float = 0.5;
+
 	var currentSpotIndex:Int = 0;
 
 	override function create()
@@ -66,7 +55,7 @@ class PlayState extends FlxState
 			};
 			s.relativeX = i * (board.width / 3);
 			s.relativeY = board.width / 8;
-			
+
 			board.add(s);
 			s.visible = false;
 		}
@@ -95,7 +84,8 @@ class PlayState extends FlxState
 
 		movePlayer();
 
-		if (spots.members.length > 0) {
+		if (spots.members.length > 0)
+		{
 			FlxG.overlap(player, spots, executeSpotOverlap, processSpotOverlap);
 		}
 
@@ -109,12 +99,16 @@ class PlayState extends FlxState
 
 		if (spots.getFirstAlive() == null)
 		{
+			currentSpotIndex = 0;
 			pickSequence();
 		}
 	}
 
 	function processSpotOverlap(p:FlxSprite, s:Light):Bool
 	{
+		// TODO punish player for landing on wrong spot
+		trace('${s.index} sprite i');
+		trace('${currentSpotIndex} player i');
 		return s.clr == tileSeq[currentSpotIndex] && s.index == currentSpotIndex;
 	}
 
@@ -130,7 +124,6 @@ class PlayState extends FlxState
 
 	function playBoard(?_:FlxTimer)
 	{
-		currentSpotIndex = 0;
 		yeti.state = yeti.waitForStart;
 
 		for (light in board.children)
@@ -166,38 +159,43 @@ class PlayState extends FlxState
 				});
 			}
 		});
+
 		lightsShown++;
 	}
 
 	function boardFinished()
 	{
-		var duplicateColors:Int = 0;
-		var tempClr:LightColor = tileSeq[0];
+		var dupls:Int = 0;
+		var prevClr:LightColor = tileSeq[0];
+
 		for (i in 0...tileSeq.length)
 		{
-			if (i != 0 && tileSeq[i] == tempClr)
-				trace(duplicateColors++); 
-			
-			var spt = new Light(
-				FlxG.random.int(0, 14) * 32,
-				FlxG.random.int(0, 7) * 32,
-				i
-			);
-
-			if (duplicateColors <= 1)
+			// TODO: make static vars for each color?
+			if (i > 0 && tileSeq[i] == prevClr)
 			{
-				spt.color = spt.clr = tileSeq[i];
+				dupls++;
 			}
 			else
 			{
-				// FIXME won't brighten colors, probably need new design
-				spt.clr = tileSeq[i];
-				var asColor:FlxColor = cast spt.clr;
-				spt.color = FlxColor.fromHSB(asColor.hue, asColor.saturation - (1-(i*.35)), (10 - i) * 0.35, 1);
+				dupls = 0;
+				// prevClr = tileSeq[i];
 			}
-			spots.add(spt);
 
-			tempClr = tileSeq[i];
+			var spt = new Light(
+				(FlxG.random.int(0, 12) * 32), 
+				(FlxG.random.int(0, 5) * 32), 
+				i, 
+				dupls != 0 
+					? dupls 
+					: null
+			);
+
+			if (spt.overlaps(player))
+				spt.setPosition((FlxG.random.int(0, 12) * 32), (FlxG.random.int(0, 5) * 32));
+			
+			spt.color = spt.clr = tileSeq[i];
+			spots.add(spt);
+			prevClr = tileSeq[i];
 		}
 
 		yeti.state = yeti.hunt;
@@ -251,22 +249,24 @@ class Light extends FlxNestedSprite
 	public var clr:LightColor = RED;
 
 	var txt:FlxNestedTextSprite;
-	
-	public function new(x:Float, y:Float, ?index:Int)
+
+	public function new(x:Float, y:Float, ?index:Int, ?visualIndex:Int)
 	{
 		super(x, y, 'assets/images/spot.png');
 		this.index = index;
+		setSize(28, 28);
+		centerOffsets();
 
 		// TODO: wait for markl's answer on the path
-		if (index != null) {
-			txt = new FlxNestedTextSprite(Std.string(index), FlxAssets.FONT_DEFAULT, 10, 0, FlxColor.BLACK, -1, "center", 0);
+		if (visualIndex != null)
+		{
+			txt = new FlxNestedTextSprite(Std.string(visualIndex), FlxAssets.FONT_DEFAULT, 10, 0, FlxColor.BLACK, -1, "center", 0);
 			add(txt);
 			txt.relativeX = (width / 2) - (txt.width / 2);
 			txt.relativeY = (height / 2) - (txt.height / 2);
 		}
 	}
-
-} 
+}
 
 enum abstract LightColor(FlxColor) to FlxColor
 {
