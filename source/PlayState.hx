@@ -1,5 +1,7 @@
 package;
 
+import flixel.tweens.FlxEase;
+import flixel.tweens.FlxTween;
 import flixel.system.FlxAssets;
 import FlxNestedTextSprite;
 import flixel.group.FlxGroup;
@@ -17,14 +19,11 @@ class PlayState extends FlxState
 	var yeti:Yeti;
 
 	// Player stuff
+	static inline final SPEED:Float = 100.5;
 	var player:FlxSprite;
 
-	static inline final SPEED:Float = 100.5;
 
-	// board that shows the sequence of lights
 	var board:FlxNestedSprite;
-	var currentFloor:FlxColor;
-	// tilemap
 	var spots:FlxTypedGroup<Light>;
 
 	var tileSeq:Array<LightColor>;
@@ -36,6 +35,11 @@ class PlayState extends FlxState
 
 	static private var lightsShown:Int = 0;
 	static private var lightShowTime:Float = 0.5;
+	var lightColorInsts:Map<LightColor, Int> = [
+		RED => 0,
+		BLUE => 0,
+		GREEN => 0
+	];
 
 	var currentSpotIndex:Int = 0;
 
@@ -100,20 +104,22 @@ class PlayState extends FlxState
 		if (spots.getFirstAlive() == null)
 		{
 			currentSpotIndex = 0;
-			pickSequence();
+			FlxTween.tween(board, {y: 0}, 0.8, {
+				onComplete: (_) -> pickSequence(),
+				ease: FlxEase.elasticInOut
+			});
 		}
 	}
 
 	function processSpotOverlap(p:FlxSprite, s:Light):Bool
 	{
 		// TODO punish player for landing on wrong spot
-		trace('${s.index} sprite i');
-		trace('${currentSpotIndex} player i');
 		return s.clr == tileSeq[currentSpotIndex] && s.index == currentSpotIndex;
 	}
 
 	function pickSequence()
 	{
+		FlxG.random.shuffle(allColors);
 		tileSeq = [];
 
 		for (i in 0...seqMax++)
@@ -155,7 +161,10 @@ class PlayState extends FlxState
 					lightsShown = 0;
 
 					lightShowTime -= 0.05;
-					boardFinished();
+					FlxTween.tween(board, {y: -board.width}, 1.75, {
+						onComplete: (_) -> boardFinished(),
+						ease: FlxEase.elasticIn
+					});
 				});
 			}
 		});
@@ -168,9 +177,12 @@ class PlayState extends FlxState
 		var dupls:Int = 0;
 		var prevClr:LightColor = tileSeq[0];
 
+		lightColorInsts = [RED=>0,BLUE=>0,GREEN=>0];
+
 		for (i in 0...tileSeq.length)
 		{
 			// TODO: make static vars for each color?
+			lightColorInsts[tileSeq[i]]++;
 			if (i > 0 && tileSeq[i] == prevClr)
 			{
 				dupls++;
@@ -178,21 +190,27 @@ class PlayState extends FlxState
 			else
 			{
 				dupls = 0;
-				// prevClr = tileSeq[i];
 			}
 
+			var visualIndex = {
+				if (dupls != 0)
+					dupls + 1
+				else if (dupls == 0 && lightColorInsts[tileSeq[i]] <= 1)
+					null
+				else
+					lightColorInsts[tileSeq[i]]+1;
+			};
+			
 			var spt = new Light(
 				(FlxG.random.int(0, 12) * 32), 
 				(FlxG.random.int(0, 5) * 32), 
 				i, 
-				dupls != 0 
-					? dupls 
-					: null
+				visualIndex
 			);
 
 			if (spt.overlaps(player))
 				spt.setPosition((FlxG.random.int(0, 12) * 32), (FlxG.random.int(0, 5) * 32));
-			
+
 			spt.color = spt.clr = tileSeq[i];
 			spots.add(spt);
 			prevClr = tileSeq[i];
