@@ -18,6 +18,7 @@ class Yeti extends FlxNestedSprite
 	var target:FlxPoint;
 
 	var sliceTime:Float = 0;
+	var timed:Float = 13;
 
 	public function new(x:Float = 0, y:Float = 0, player:FlxSprite)
 	{
@@ -41,7 +42,7 @@ class Yeti extends FlxNestedSprite
 	{
 		sliceTime += elapsed;
 
-		if (sliceTime <= 12.85)
+		if (sliceTime <= timed)
 		{
 			sliceTime = 0;
 			target.put();
@@ -66,7 +67,9 @@ class Yeti extends FlxNestedSprite
 		if (v == waitForStart)
 		{
 			acl += 5.5;
-			maxAcl += 2.5;
+			maxAcl += 1.35;
+
+			timed += 2.5;
 		}
 
 		return state = v;

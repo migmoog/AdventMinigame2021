@@ -41,7 +41,7 @@ class PlayState extends FlxState
 		GREEN => 0
 	];
 
-	var currentSpotIndex:Int = 0;
+	var iSpot:Int = 0;
 
 	override function create()
 	{
@@ -99,11 +99,11 @@ class PlayState extends FlxState
 	function executeSpotOverlap(p:FlxSprite, s:Light)
 	{
 		s.destroy();
-		currentSpotIndex++;
+		iSpot++;
 
 		if (spots.getFirstAlive() == null)
 		{
-			currentSpotIndex = 0;
+			iSpot = 0;
 			FlxTween.tween(board, {y: 0}, 0.8, {
 				onComplete: (_) -> pickSequence(),
 				ease: FlxEase.elasticInOut
@@ -114,7 +114,7 @@ class PlayState extends FlxState
 	function processSpotOverlap(p:FlxSprite, s:Light):Bool
 	{
 		// TODO punish player for landing on wrong spot
-		return s.clr == tileSeq[currentSpotIndex] && s.index == currentSpotIndex;
+		return s.clr == tileSeq[iSpot] && s.index == iSpot;
 	}
 
 	function pickSequence()
@@ -278,7 +278,17 @@ class Light extends FlxNestedSprite
 		// TODO: wait for markl's answer on the path
 		if (visualIndex != null)
 		{
-			txt = new FlxNestedTextSprite(Std.string(visualIndex), FlxAssets.FONT_DEFAULT, 10, 0, FlxColor.BLACK, -1, "center", 0);
+			txt = new FlxNestedTextSprite(
+				Std.string(visualIndex), 
+				FlxAssets.FONT_DEFAULT, 
+				10, 
+				0, 
+				FlxColor.BLACK, 
+				-1, 
+				"center", 
+				0
+			);
+
 			add(txt);
 			txt.relativeX = (width / 2) - (txt.width / 2);
 			txt.relativeY = (height / 2) - (txt.height / 2);
