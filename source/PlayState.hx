@@ -32,14 +32,8 @@ class PlayState extends FlxState
 	var seqTimer:FlxTimer = new FlxTimer();
 
 	var score:Int = 0;
-
-	static private var lightsShown:Int = 0;
-	static private var lightShowTime:Float = 0.5;
-	var lightColorInsts:Map<LightColor, Int> = [
-		RED => 0,
-		BLUE => 0,
-		GREEN => 0
-	];
+	var lightsShown:Int = 0;
+	var lightShowTime:Float = 0.5;
 
 	var iSpot:Int = 0;
 
@@ -69,6 +63,7 @@ class PlayState extends FlxState
 		add(spots);
 
 		player = new FlxSprite(0, 0).makeGraphic(16, 16, FlxColor.BLUE);
+		player.maxVelocity.set(125, 125);
 		player.drag.set(375, 375);
 		add(player);
 
@@ -103,18 +98,24 @@ class PlayState extends FlxState
 
 		if (spots.getFirstAlive() == null)
 		{
-			iSpot = 0;
-			FlxTween.tween(board, {y: 0}, 0.8, {
-				onComplete: (_) -> pickSequence(),
-				ease: FlxEase.elasticInOut
-			});
+			yeti.state = yeti.waitForStart;
+			score++;
+			boardReturn();
 		}
 	}
 
 	function processSpotOverlap(p:FlxSprite, s:Light):Bool
 	{
 		// TODO punish player for landing on wrong spot
-		return s.clr == tileSeq[iSpot] && s.index == iSpot;
+		if (s.clr == tileSeq[iSpot] && s.index == iSpot) {
+			return true;
+		} else {
+			seqMax--;
+			boardReturn();
+			for (i in spots)
+				i.destroy();
+			return false;
+		}
 	}
 
 	function pickSequence()
@@ -130,7 +131,7 @@ class PlayState extends FlxState
 
 	function playBoard(?_:FlxTimer)
 	{
-		yeti.state = yeti.waitForStart;
+		// yeti.state = yeti.waitForStart;
 
 		for (light in board.children)
 		{
@@ -177,11 +178,10 @@ class PlayState extends FlxState
 		var dupls:Int = 0;
 		var prevClr:LightColor = tileSeq[0];
 
-		lightColorInsts = [RED=>0,BLUE=>0,GREEN=>0];
+		var lightColorInsts = [RED=>0,BLUE=>0,GREEN=>0];
 
 		for (i in 0...tileSeq.length)
 		{
-			// TODO: make static vars for each color?
 			lightColorInsts[tileSeq[i]]++;
 			if (i > 0 && tileSeq[i] == prevClr)
 			{
@@ -217,6 +217,14 @@ class PlayState extends FlxState
 		}
 
 		yeti.state = yeti.hunt;
+	}
+
+	function boardReturn() {
+		iSpot = 0;
+		FlxTween.tween(board, {y: 0}, 0.8, {
+			onComplete: (_) -> pickSequence(),
+			ease: FlxEase.elasticInOut
+		});
 	}
 
 	function movePlayer()
@@ -257,6 +265,12 @@ class PlayState extends FlxState
 
 			player.velocity.set(SPEED, 0);
 			player.velocity.rotate(FlxPoint.weak(0, 0), newAngle);
+			player.acceleration.set(SPEED, 0);
+			player.acceleration.rotate(FlxPoint.weak(0, 0), newAngle);
+		}
+		else
+		{
+			player.acceleration.set(0, 0);
 		}
 	}
 }

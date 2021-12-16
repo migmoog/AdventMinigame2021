@@ -18,7 +18,7 @@ class Yeti extends FlxNestedSprite
 	var target:FlxPoint;
 
 	var sliceTime:Float = 0;
-	var timed:Float = 13;
+	var timed:Float = 23;
 
 	public function new(x:Float = 0, y:Float = 0, player:FlxSprite)
 	{
