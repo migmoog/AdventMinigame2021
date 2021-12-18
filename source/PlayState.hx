@@ -106,14 +106,16 @@ class PlayState extends FlxState
 
 	function processSpotOverlap(p:FlxSprite, s:Light):Bool
 	{
-		// TODO punish player for landing on wrong spot
 		if (s.clr == tileSeq[iSpot] && s.index == iSpot) {
 			return true;
 		} else {
-			seqMax--;
+			if (seqMax > 0)
+				seqMax--;
+			
 			boardReturn();
 			for (i in spots)
 				i.destroy();
+
 			return false;
 		}
 	}
@@ -178,27 +180,24 @@ class PlayState extends FlxState
 		var dupls:Int = 0;
 		var prevClr:LightColor = tileSeq[0];
 
-		var lightColorInsts = [RED=>0,BLUE=>0,GREEN=>0];
+		var colorInsts = [RED=>0, BLUE=>0, GREEN=>0];
 
 		for (i in 0...tileSeq.length)
 		{
-			lightColorInsts[tileSeq[i]]++;
+			colorInsts[tileSeq[i]]++;
 			if (i > 0 && tileSeq[i] == prevClr)
-			{
 				dupls++;
-			}
 			else
-			{
 				dupls = 0;
-			}
 
-			var visualIndex = {
+			// FIXME: bug where smth like RED/BLUE/RED/BLUE the second one's visualIndex is 3
+			var visualIndex:Null<Int> = {
 				if (dupls != 0)
-					dupls + 1
-				else if (dupls == 0 && lightColorInsts[tileSeq[i]] <= 1)
+					colorInsts[tileSeq[i]]
+				else if (dupls == 0 && colorInsts[tileSeq[i]] <= 1)
 					null
 				else
-					lightColorInsts[tileSeq[i]]+1;
+					colorInsts[tileSeq[i]];
 			};
 			
 			var spt = new Light(
@@ -208,7 +207,7 @@ class PlayState extends FlxState
 				visualIndex
 			);
 
-			if (spt.overlaps(player))
+			while (spt.overlaps(player))
 				spt.setPosition((FlxG.random.int(0, 12) * 32), (FlxG.random.int(0, 5) * 32));
 
 			spt.color = spt.clr = tileSeq[i];
@@ -219,7 +218,8 @@ class PlayState extends FlxState
 		yeti.state = yeti.hunt;
 	}
 
-	function boardReturn() {
+	function boardReturn() 
+	{
 		iSpot = 0;
 		FlxTween.tween(board, {y: 0}, 0.8, {
 			onComplete: (_) -> pickSequence(),

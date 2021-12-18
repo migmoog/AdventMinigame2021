@@ -69,7 +69,7 @@ class Yeti extends FlxNestedSprite
 			acl += 5.5;
 			maxAcl += 1.35;
 
-			timed += 2.5;
+			timed += 3.5;
 		}
 
 		return state = v;
