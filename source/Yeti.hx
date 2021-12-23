@@ -1,3 +1,5 @@
+import flixel.util.FlxColor;
+import flixel.tweens.FlxTween;
 import flixel.math.FlxVelocity;
 import flixel.math.FlxVector;
 import flixel.addons.display.FlxNestedSprite;
@@ -6,7 +8,7 @@ import flixel.math.FlxPoint;
 
 typedef YetiState = Float->Void;
 
-class Yeti extends FlxNestedSprite
+class Yeti extends FlxSprite
 {
 	var acl:Float = 15.5;
 	var maxAcl:Float = 115.75;
@@ -23,7 +25,20 @@ class Yeti extends FlxNestedSprite
 	public function new(x:Float = 0, y:Float = 0, player:FlxSprite)
 	{
 		super(x, y);
-		makeGraphic(54, 68);
+		loadGraphic(AssetPaths.yeti__png, true, 48, 64);
+		setFacingFlip(LEFT, false, false);
+		setFacingFlip(RIGHT, true, false);
+
+		var fps = 15;
+		animation.add('hunt', [0, 1, 2, 3, 4], fps);
+		animation.add('freeze', [12, 13, 14, 15, 16, 17, 18, 19], fps, false);
+		animation.add('thaw', [24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35], fps, false);
+		animation.add('idle', [36, 37, 38, 39, 40, 41, 42, 43], fps);
+		animation.finishCallback = finishAnim;
+		animation.play('idle');
+		
+		setSize(36, 48);
+		centerOffsets();
 		drag.set(500, 500);
 
 		state = waitForStart;
@@ -40,6 +55,9 @@ class Yeti extends FlxNestedSprite
 
 	public function hunt(elapsed:Float)
 	{
+		animation.play('hunt');
+		facing = velocity.x < 0 ? LEFT : RIGHT;
+		
 		sliceTime += elapsed;
 
 		if (sliceTime <= timed)
@@ -73,5 +91,21 @@ class Yeti extends FlxNestedSprite
 		}
 
 		return state = v;
+	}
+
+	function finishAnim(name:String) {
+		if (name == 'freeze') 
+		{
+			animation.stop();
+			FlxTween.color(this, 0.5, FlxColor.RED, FlxColor.BLUE);
+		} 
+		else if (name == 'thaw') 
+		{
+			FlxTween.color(this, 0.75, FlxColor.BLUE, FlxColor.RED, {
+				onComplete: (_) -> {
+					state = hunt;
+				}
+			});
+		}
 	}
 }

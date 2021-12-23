@@ -1,5 +1,6 @@
 package;
 
+import flixel.text.FlxText;
 import flixel.tweens.FlxEase;
 import flixel.tweens.FlxTween;
 import flixel.system.FlxAssets;
@@ -28,10 +29,12 @@ class PlayState extends FlxState
 
 	var tileSeq:Array<LightColor>;
 	var allColors:Array<LightColor> = [RED, BLUE, GREEN];
-	var seqMax:Int = 3;
+	var seqMax:Int = 2;
 	var seqTimer:FlxTimer = new FlxTimer();
 
 	var score:Int = 0;
+	var scoreText:FlxText;
+	
 	var lightsShown:Int = 0;
 	var lightShowTime:Float = 0.5;
 
@@ -71,6 +74,9 @@ class PlayState extends FlxState
 		yeti.screenCenter();
 		add(yeti);
 
+		scoreText = new FlxText(FlxG.width - 16, 0, 0, Std.string(score));
+		add(scoreText);
+
 		pickSequence();
 
 		super.create();
@@ -82,13 +88,22 @@ class PlayState extends FlxState
 		FlxSpriteUtil.bound(player, 0, FlxG.width, 0, FlxG.height);
 
 		movePlayer();
+		scoreText.text = Std.string(score);
 
-		if (spots.members.length > 0)
-		{
-			FlxG.overlap(player, spots, executeSpotOverlap, processSpotOverlap);
-		}
+		FlxG.overlap(player, spots, executeSpotOverlap, processSpotOverlap);
+		FlxG.overlap(player, yeti, executeYetiKill, processYetiKill);
 
 		super.update(elapsed);
+	}
+
+	function executeYetiKill(player:FlxSprite, y:Yeti) 
+	{
+		FlxG.switchState(new Lose());
+	}
+
+	function processYetiKill(player:FlxSprite, y:Yeti):Bool 
+	{
+		return yeti.state == yeti.hunt;
 	}
 
 	function executeSpotOverlap(p:FlxSprite, s:Light)
@@ -98,7 +113,8 @@ class PlayState extends FlxState
 
 		if (spots.getFirstAlive() == null)
 		{
-			yeti.state = yeti.waitForStart;
+			// yeti.state = yeti.waitForStart;
+			yeti.animation.play('freeze', true);
 			score++;
 			boardReturn();
 		}
@@ -106,9 +122,12 @@ class PlayState extends FlxState
 
 	function processSpotOverlap(p:FlxSprite, s:Light):Bool
 	{
-		if (s.clr == tileSeq[iSpot] && s.index == iSpot) {
+		if (s.clr == tileSeq[iSpot] && s.index == iSpot) 
+		{
 			return true;
-		} else {
+		} 
+		else 
+		{
 			if (seqMax > 0)
 				seqMax--;
 			
@@ -128,12 +147,14 @@ class PlayState extends FlxState
 		for (i in 0...seqMax++)
 			tileSeq.push(FlxG.random.getObject(allColors));
 
+		yeti.animation.play('freeze', true);
 		playBoard();
 	}
 
 	function playBoard(?_:FlxTimer)
 	{
-		// yeti.state = yeti.waitForStart;
+		yeti.state = yeti.waitForStart;
+		// yeti.animation.play('freeze', true);
 
 		for (light in board.children)
 		{
@@ -178,6 +199,7 @@ class PlayState extends FlxState
 	function boardFinished()
 	{
 		var dupls:Int = 0;
+		// VISUAL INDEX BUG: originates from the beginning of the loop because prev at 0 is tileSeq[0] 
 		var prevClr:LightColor = tileSeq[0];
 
 		var colorInsts = [RED=>0, BLUE=>0, GREEN=>0];
@@ -190,7 +212,6 @@ class PlayState extends FlxState
 			else
 				dupls = 0;
 
-			// FIXME: bug where smth like RED/BLUE/RED/BLUE the second one's visualIndex is 3
 			var visualIndex:Null<Int> = {
 				if (dupls != 0)
 					colorInsts[tileSeq[i]]
@@ -201,21 +222,22 @@ class PlayState extends FlxState
 			};
 			
 			var spt = new Light(
-				(FlxG.random.int(0, 12) * 32), 
-				(FlxG.random.int(0, 5) * 32), 
+				(FlxG.random.int(0, 15) * 30), 
+				(FlxG.random.int(0, 8) * 30), 
 				i, 
 				visualIndex
 			);
 
 			while (spt.overlaps(player))
-				spt.setPosition((FlxG.random.int(0, 12) * 32), (FlxG.random.int(0, 5) * 32));
+				spt.setPosition((FlxG.random.int(0, 15) * 30), (FlxG.random.int(0, 8) * 30));
 
 			spt.color = spt.clr = tileSeq[i];
 			spots.add(spt);
 			prevClr = tileSeq[i];
 		}
 
-		yeti.state = yeti.hunt;
+		// yeti.state = yeti.hunt;
+		yeti.animation.play('thaw');
 	}
 
 	function boardReturn() 
@@ -286,8 +308,8 @@ class Light extends FlxNestedSprite
 	{
 		super(x, y, 'assets/images/spot.png');
 		this.index = index;
-		setSize(28, 28);
-		centerOffsets();
+		setSize(16, 16);
+		centerOffsets(true);
 
 		// TODO: wait for markl's answer on the path
 		if (visualIndex != null)
@@ -304,8 +326,8 @@ class Light extends FlxNestedSprite
 			);
 
 			add(txt);
-			txt.relativeX = (width / 2) - (txt.width / 2);
-			txt.relativeY = (height / 2) - (txt.height / 2);
+			txt.relativeX = (graphic.width / 2) - (txt.relativeX + txt.graphic.width / 2);
+			txt.relativeY = (graphic.height / 2) - (txt.relativeY + txt.graphic.height / 2);
 		}
 	}
 }
