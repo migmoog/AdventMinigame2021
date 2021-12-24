@@ -16,7 +16,6 @@ class Yeti extends FlxSprite
 
 	public var oldState:YetiState;
 	public var state(default, set):YetiState;
-	public var freezeSignal:FlxSignal = new FlxSignal();
 
 	var playerRef:FlxSprite;
 	var target:FlxPoint;
@@ -31,14 +30,14 @@ class Yeti extends FlxSprite
 		setFacingFlip(LEFT, false, false);
 		setFacingFlip(RIGHT, true, false);
 
-		var fps = 15;
+		var fps = 20;
 		animation.add('hunt', [0, 1, 2, 3, 4], fps);
 		animation.add('freeze', [12, 13, 14, 15, 16, 17, 18, 19], fps, false);
 		animation.add('thaw', [24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35], fps, false);
 		animation.add('idle', [36, 37, 38, 39, 40, 41, 42, 43], fps);
 		animation.finishCallback = finishAnim;
-		animation.play('idle');
-		
+		animation.play('freeze');
+
 		setSize(36, 48);
 		centerOffsets();
 		drag.set(500, 500);
@@ -59,7 +58,7 @@ class Yeti extends FlxSprite
 	{
 		animation.play('hunt');
 		facing = velocity.x < 0 ? LEFT : RIGHT;
-		
+
 		sliceTime += elapsed;
 
 		if (sliceTime <= timed)
@@ -95,15 +94,16 @@ class Yeti extends FlxSprite
 		return state = v;
 	}
 
-	function finishAnim(name:String) {
-		if (name == 'freeze') 
+	function finishAnim(name:String)
+	{
+		if (name == 'freeze')
 		{
 			animation.stop();
 			FlxTween.color(this, 0.5, FlxColor.WHITE, FlxColor.BLUE, {
 				// onComplete: (_) -> state = waitForStart
 			});
-		} 
-		else if (name == 'thaw') 
+		}
+		else if (name == 'thaw')
 		{
 			FlxTween.color(this, 0.05, FlxColor.BLUE, FlxColor.WHITE, {
 				onComplete: (_) -> state = hunt

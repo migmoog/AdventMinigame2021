@@ -10,7 +10,6 @@ import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.FlxState;
 import flixel.addons.display.FlxNestedSprite;
-import flixel.math.FlxPoint;
 import flixel.util.FlxColor;
 import flixel.util.FlxSpriteUtil;
 import flixel.util.FlxTimer;
@@ -20,9 +19,9 @@ class PlayState extends FlxState
 	var yeti:Yeti;
 
 	// Player stuff
-	static inline final SPEED:Float = 100.5;
+	// static inline final SPEED:Float = 100.5;
 
-	var player:FlxSprite;
+	var player:Player;
 
 	var board:FlxNestedSprite;
 	var spots:FlxTypedGroup<Light>;
@@ -65,9 +64,10 @@ class PlayState extends FlxState
 		spots = new FlxTypedGroup<Light>();
 		add(spots);
 
-		player = new FlxSprite(0, 0).makeGraphic(16, 16, FlxColor.BLUE);
+		/* player = new FlxSprite(0, 0).makeGraphic(16, 16, FlxColor.BLUE);
 		player.maxVelocity.set(125, 125);
-		player.drag.set(375, 375);
+		player.drag.set(375, 375); */
+		player = new Player();
 		add(player);
 
 		yeti = new Yeti(0, 0, player);
@@ -87,7 +87,6 @@ class PlayState extends FlxState
 		FlxSpriteUtil.bound(yeti, 0, FlxG.width, 0, FlxG.height);
 		FlxSpriteUtil.bound(player, 0, FlxG.width, 0, FlxG.height);
 
-		movePlayer();
 		scoreText.text = Std.string(score);
 
 		FlxG.overlap(player, spots, executeSpotOverlap, processSpotOverlap);
@@ -160,10 +159,6 @@ class PlayState extends FlxState
 
 	function playBoard(?_:FlxTimer)
 	{
-		/* 
-		if (lightsShown == 0)
-			yeti.animation.play('freeze', true);
- 		*/
 		for (light in board.children)
 		{
 			var l:Display = cast light;
@@ -206,6 +201,7 @@ class PlayState extends FlxState
 
 	function boardFinished()
 	{
+		yeti.animation.play('thaw', true);
 		var dupls:Int = 0;
 		var prevClr:LightColor = tileSeq[0];
 
@@ -230,15 +226,15 @@ class PlayState extends FlxState
 				};
 
 			var spt = new Light((FlxG.random.int(0, 15) * 30), (FlxG.random.int(0, 8) * 30), i, visualIndex);
-			// var spt = spots.recycle(Light, () -> new Light((FlxG.random.int(0, 15) * 30), (FlxG.random.int(0, 8) * 30), i, visualIndex));
 
 			while (spt.overlaps(player))
 				spt.setPosition((FlxG.random.int(0, 15) * 30), (FlxG.random.int(0, 8) * 30));
 
 			spt.color = spt.clr = tileSeq[i];
 			spots.add(spt);
-			if (i == tileSeq.length - 1)
-				spt.animation.finishCallback = (_) -> yeti.animation.play('thaw');
+			// TODO: switch to yeti starts ice instead of vice-versa
+			// if (i == tileSeq.length - 1)
+				// spt.animation.finishCallback = (_) -> yeti.animation.play('thaw');
 			spt.animation.play('emerge');
 			prevClr = tileSeq[i];
 		}
@@ -254,53 +250,6 @@ class PlayState extends FlxState
 			onComplete: (_) -> pickSequence(),
 			ease: FlxEase.elasticInOut
 		});
-	}
-
-	function movePlayer()
-	{
-		var left:Bool = FlxG.keys.anyPressed([A, LEFT]);
-		var right:Bool = FlxG.keys.anyPressed([D, RIGHT]);
-		var up:Bool = FlxG.keys.anyPressed([W, UP]);
-		var down:Bool = FlxG.keys.anyPressed([S, DOWN]);
-
-		if (up && down)
-			up = down = false;
-		if (left && right)
-			left = right = false;
-
-		if (up || down || left || right)
-		{
-			var newAngle:Float = 0;
-			if (up)
-			{
-				newAngle = -90;
-				if (left)
-					newAngle -= 45;
-				else if (right)
-					newAngle += 45;
-			}
-			else if (down)
-			{
-				newAngle = 90;
-				if (left)
-					newAngle += 45;
-				else if (right)
-					newAngle -= 45;
-			}
-			else if (left)
-				newAngle = 180;
-			else if (right)
-				newAngle = 0;
-
-			player.velocity.set(SPEED, 0);
-			player.velocity.rotate(FlxPoint.weak(0, 0), newAngle);
-			player.acceleration.set(SPEED, 0);
-			player.acceleration.rotate(FlxPoint.weak(0, 0), newAngle);
-		}
-		else
-		{
-			player.acceleration.set(0, 0);
-		}
 	}
 }
 
@@ -326,14 +275,13 @@ class Light extends FlxNestedSprite
 		setSize(16, 16);
 		centerOffsets(true);
 
-		// TODO: wait for markl's answer on the path
 		if (visualIndex != null)
 		{
 			txt = new FlxNestedTextSprite(Std.string(visualIndex), FlxAssets.FONT_DEFAULT, 10, 0, FlxColor.WHITE, -1, "center", 0);
 
 			add(txt);
-			txt.relativeX = (width / 2) - (txt.relativeX + txt.width / 2);
-			txt.relativeY = (height / 2) - (txt.relativeY + txt.height / 2);
+			txt.relativeX = (width / 2) - (txt.width / 2);
+			txt.relativeY = (height / 2) - (txt.height / 2);
 		}
 	}
 }
