@@ -1,3 +1,4 @@
+import flixel.util.FlxSignal;
 import flixel.util.FlxColor;
 import flixel.tweens.FlxTween;
 import flixel.math.FlxVelocity;
@@ -15,6 +16,7 @@ class Yeti extends FlxSprite
 
 	public var oldState:YetiState;
 	public var state(default, set):YetiState;
+	public var freezeSignal:FlxSignal = new FlxSignal();
 
 	var playerRef:FlxSprite;
 	var target:FlxPoint;
@@ -97,14 +99,14 @@ class Yeti extends FlxSprite
 		if (name == 'freeze') 
 		{
 			animation.stop();
-			FlxTween.color(this, 0.5, FlxColor.RED, FlxColor.BLUE);
+			FlxTween.color(this, 0.5, FlxColor.WHITE, FlxColor.BLUE, {
+				// onComplete: (_) -> state = waitForStart
+			});
 		} 
 		else if (name == 'thaw') 
 		{
-			FlxTween.color(this, 0.75, FlxColor.BLUE, FlxColor.RED, {
-				onComplete: (_) -> {
-					state = hunt;
-				}
+			FlxTween.color(this, 0.05, FlxColor.BLUE, FlxColor.WHITE, {
+				onComplete: (_) -> state = hunt
 			});
 		}
 	}

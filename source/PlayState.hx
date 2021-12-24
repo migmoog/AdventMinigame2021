@@ -21,8 +21,8 @@ class PlayState extends FlxState
 
 	// Player stuff
 	static inline final SPEED:Float = 100.5;
-	var player:FlxSprite;
 
+	var player:FlxSprite;
 
 	var board:FlxNestedSprite;
 	var spots:FlxTypedGroup<Light>;
@@ -34,7 +34,7 @@ class PlayState extends FlxState
 
 	var score:Int = 0;
 	var scoreText:FlxText;
-	
+
 	var lightsShown:Int = 0;
 	var lightShowTime:Float = 0.5;
 
@@ -46,7 +46,7 @@ class PlayState extends FlxState
 		board.screenCenter(X);
 		for (i in 0...3)
 		{
-			var s = new Light(0, 0);
+			var s = new Display(0, 0, 'assets/images/circle_display.png');
 			s.color = s.clr = switch i
 			{
 				case 0: RED;
@@ -96,42 +96,50 @@ class PlayState extends FlxState
 		super.update(elapsed);
 	}
 
-	function executeYetiKill(player:FlxSprite, y:Yeti) 
+	function executeYetiKill(player:FlxSprite, y:Yeti)
 	{
 		FlxG.switchState(new Lose());
 	}
 
-	function processYetiKill(player:FlxSprite, y:Yeti):Bool 
+	function processYetiKill(player:FlxSprite, y:Yeti):Bool
 	{
 		return yeti.state == yeti.hunt;
 	}
 
 	function executeSpotOverlap(p:FlxSprite, s:Light)
 	{
-		s.destroy();
-		iSpot++;
-
-		if (spots.getFirstAlive() == null)
+		s.allowCollisions = NONE;
+		s.animation.finishCallback = (n) ->
 		{
-			// yeti.state = yeti.waitForStart;
-			yeti.animation.play('freeze', true);
-			score++;
-			boardReturn();
+			// can't destroy these guys, causes a crash
+			if (n == 'shatter')
+				s.kill();
+			if (spots.getFirstAlive() == null)
+			{
+				// spots.forEachExists((l) -> l.destroy());
+				// yeti.state = yeti.waitForStart;
+
+				yeti.animation.play('freeze', true);
+				score++;
+				boardReturn(true);
+			}
 		}
+		s.animation.play('shatter');
+		iSpot++;
 	}
 
 	function processSpotOverlap(p:FlxSprite, s:Light):Bool
 	{
-		if (s.clr == tileSeq[iSpot] && s.index == iSpot) 
+		if (s.clr == tileSeq[iSpot] && s.index == iSpot)
 		{
 			return true;
-		} 
-		else 
+		}
+		else
 		{
 			if (seqMax > 0)
 				seqMax--;
-			
-			boardReturn();
+
+			boardReturn(false);
 			for (i in spots)
 				i.destroy();
 
@@ -147,18 +155,18 @@ class PlayState extends FlxState
 		for (i in 0...seqMax++)
 			tileSeq.push(FlxG.random.getObject(allColors));
 
-		yeti.animation.play('freeze', true);
 		playBoard();
 	}
 
 	function playBoard(?_:FlxTimer)
 	{
-		yeti.state = yeti.waitForStart;
-		// yeti.animation.play('freeze', true);
-
+		/* 
+		if (lightsShown == 0)
+			yeti.animation.play('freeze', true);
+ 		*/
 		for (light in board.children)
 		{
-			var l:Light = cast light;
+			var l:Display = cast light;
 			if (l.clr == tileSeq[lightsShown] && !light.visible)
 			{
 				light.visible = true;
@@ -199,10 +207,9 @@ class PlayState extends FlxState
 	function boardFinished()
 	{
 		var dupls:Int = 0;
-		// VISUAL INDEX BUG: originates from the beginning of the loop because prev at 0 is tileSeq[0] 
 		var prevClr:LightColor = tileSeq[0];
 
-		var colorInsts = [RED=>0, BLUE=>0, GREEN=>0];
+		var colorInsts = [RED => 0, BLUE => 0, GREEN => 0];
 
 		for (i in 0...tileSeq.length)
 		{
@@ -212,36 +219,36 @@ class PlayState extends FlxState
 			else
 				dupls = 0;
 
-			var visualIndex:Null<Int> = {
-				if (dupls != 0)
-					colorInsts[tileSeq[i]]
-				else if (dupls == 0 && colorInsts[tileSeq[i]] <= 1)
-					null
-				else
-					colorInsts[tileSeq[i]];
-			};
-			
-			var spt = new Light(
-				(FlxG.random.int(0, 15) * 30), 
-				(FlxG.random.int(0, 8) * 30), 
-				i, 
-				visualIndex
-			);
+			var visualIndex:Null<Int> =
+				{
+					if (dupls != 0)
+						colorInsts[tileSeq[i]]
+					else if (dupls == 0 && colorInsts[tileSeq[i]] <= 1)
+						null
+					else
+						colorInsts[tileSeq[i]];
+				};
+
+			var spt = new Light((FlxG.random.int(0, 15) * 30), (FlxG.random.int(0, 8) * 30), i, visualIndex);
+			// var spt = spots.recycle(Light, () -> new Light((FlxG.random.int(0, 15) * 30), (FlxG.random.int(0, 8) * 30), i, visualIndex));
 
 			while (spt.overlaps(player))
 				spt.setPosition((FlxG.random.int(0, 15) * 30), (FlxG.random.int(0, 8) * 30));
 
 			spt.color = spt.clr = tileSeq[i];
 			spots.add(spt);
+			if (i == tileSeq.length - 1)
+				spt.animation.finishCallback = (_) -> yeti.animation.play('thaw');
+			spt.animation.play('emerge');
 			prevClr = tileSeq[i];
 		}
-
-		// yeti.state = yeti.hunt;
-		yeti.animation.play('thaw');
 	}
 
-	function boardReturn() 
+	function boardReturn(success:Bool)
 	{
+		if (success)
+			yeti.state = yeti.waitForStart;
+		
 		iSpot = 0;
 		FlxTween.tween(board, {y: 0}, 0.8, {
 			onComplete: (_) -> pickSequence(),
@@ -297,16 +304,24 @@ class PlayState extends FlxState
 	}
 }
 
+class Display extends FlxNestedSprite
+{
+	public var clr:LightColor;
+}
+
 class Light extends FlxNestedSprite
 {
 	public var index:Int;
-	public var clr:LightColor = RED;
+	public var clr:LightColor;
 
 	var txt:FlxNestedTextSprite;
 
 	public function new(x:Float, y:Float, ?index:Int, ?visualIndex:Int)
 	{
-		super(x, y, 'assets/images/spot.png');
+		super(x, y);
+		loadGraphic('assets/images/icicle.png', true, 30, 30);
+		animation.add('emerge', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], 15, false);
+		animation.add('shatter', [10, 11, 12, 13, 14], 15, false);
 		this.index = index;
 		setSize(16, 16);
 		centerOffsets(true);
@@ -314,20 +329,11 @@ class Light extends FlxNestedSprite
 		// TODO: wait for markl's answer on the path
 		if (visualIndex != null)
 		{
-			txt = new FlxNestedTextSprite(
-				Std.string(visualIndex), 
-				FlxAssets.FONT_DEFAULT, 
-				10, 
-				0, 
-				FlxColor.BLACK, 
-				-1, 
-				"center", 
-				0
-			);
+			txt = new FlxNestedTextSprite(Std.string(visualIndex), FlxAssets.FONT_DEFAULT, 10, 0, FlxColor.WHITE, -1, "center", 0);
 
 			add(txt);
-			txt.relativeX = (graphic.width / 2) - (txt.relativeX + txt.graphic.width / 2);
-			txt.relativeY = (graphic.height / 2) - (txt.relativeY + txt.graphic.height / 2);
+			txt.relativeX = (width / 2) - (txt.relativeX + txt.width / 2);
+			txt.relativeY = (height / 2) - (txt.relativeY + txt.height / 2);
 		}
 	}
 }
