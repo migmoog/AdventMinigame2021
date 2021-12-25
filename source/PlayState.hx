@@ -115,9 +115,6 @@ class PlayState extends FlxState
 				s.kill();
 			if (spots.getFirstAlive() == null)
 			{
-				// spots.forEachExists((l) -> l.destroy());
-				// yeti.state = yeti.waitForStart;
-
 				yeti.animation.play('freeze', true);
 				score++;
 				boardReturn(true);
@@ -232,9 +229,6 @@ class PlayState extends FlxState
 
 			spt.color = spt.clr = tileSeq[i];
 			spots.add(spt);
-			// TODO: switch to yeti starts ice instead of vice-versa
-			// if (i == tileSeq.length - 1)
-				// spt.animation.finishCallback = (_) -> yeti.animation.play('thaw');
 			spt.animation.play('emerge');
 			prevClr = tileSeq[i];
 		}

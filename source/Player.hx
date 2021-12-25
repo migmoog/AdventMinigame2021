@@ -9,7 +9,11 @@ class Player extends FlxSprite {
     public function new(x:Float = 0, y:Float = 0) 
     {
         super(x, y);
-		makeGraphic(16, 16, FlxColor.BLUE);
+        loadGraphic('assets/images/player.png', true, 16, 16);
+		animation.add('run', [0,1,2,3,4,5], 15);
+		setFacingFlip(LEFT, false, false);
+		setFacingFlip(RIGHT, true, false);
+		
 		maxVelocity.set(125, 125);
 		drag.set(375, 375);
     }
@@ -28,6 +32,8 @@ class Player extends FlxSprite {
 
 		if (up || down || left || right)
 		{
+			animation.play('run');
+			
 			var newAngle:Float = 0;
 			if (up)
 			{
@@ -46,9 +52,15 @@ class Player extends FlxSprite {
 					newAngle -= 45;
 			}
 			else if (left)
+			{
+				facing = LEFT;
 				newAngle = 180;
+			}
 			else if (right)
+			{
+				facing = RIGHT;
 				newAngle = 0;
+			}
 
 			velocity.set(SPEED, 0);
 			velocity.rotate(FlxPoint.weak(0, 0), newAngle);
@@ -57,6 +69,7 @@ class Player extends FlxSprite {
 		}
 		else
 		{
+			animation.stop();
 			acceleration.set(0, 0);
 		}
         super.update(elapsed);
