@@ -18,9 +18,6 @@ class PlayState extends FlxState
 {
 	var yeti:Yeti;
 
-	// Player stuff
-	// static inline final SPEED:Float = 100.5;
-
 	var player:Player;
 
 	var board:FlxNestedSprite;
@@ -41,6 +38,16 @@ class PlayState extends FlxState
 
 	override function create()
 	{
+		spots = new FlxTypedGroup<Light>();
+		add(spots);
+		
+		player = new Player();
+		add(player);
+		
+		yeti = new Yeti(0, 0, player);
+		yeti.screenCenter();
+		add(yeti);
+
 		board = new FlxNestedSprite(0, 0, 'assets/images/board.png');
 		board.screenCenter(X);
 		for (i in 0...3)
@@ -60,19 +67,6 @@ class PlayState extends FlxState
 			s.visible = false;
 		}
 		add(board);
-
-		spots = new FlxTypedGroup<Light>();
-		add(spots);
-
-		/* player = new FlxSprite(0, 0).makeGraphic(16, 16, FlxColor.BLUE);
-		player.maxVelocity.set(125, 125);
-		player.drag.set(375, 375); */
-		player = new Player();
-		add(player);
-
-		yeti = new Yeti(0, 0, player);
-		yeti.screenCenter();
-		add(yeti);
 
 		scoreText = new FlxText(FlxG.width - 16, 0, 0, Std.string(score));
 		add(scoreText);
@@ -148,9 +142,12 @@ class PlayState extends FlxState
 		FlxG.random.shuffle(allColors);
 		tileSeq = [];
 
-		for (i in 0...seqMax++)
+		for (i in 0...seqMax)
 			tileSeq.push(FlxG.random.getObject(allColors));
-
+		
+		if (seqMax < 90)
+			seqMax++;
+			
 		playBoard();
 	}
 
@@ -169,10 +166,8 @@ class PlayState extends FlxState
 		seqTimer.start(lightShowTime, (_) ->
 		{
 			for (i in board.children)
-			{
 				if (i.visible)
 					i.visible = false;
-			}
 
 			if (lightsShown < tileSeq.length)
 				seqTimer.start(lightShowTime, playBoard);
@@ -212,17 +207,18 @@ class PlayState extends FlxState
 			else
 				dupls = 0;
 
-			var visualIndex:Null<Int> =
-				{
-					if (dupls != 0)
-						colorInsts[tileSeq[i]]
-					else if (dupls == 0 && colorInsts[tileSeq[i]] <= 1)
-						null
-					else
-						colorInsts[tileSeq[i]];
-				};
+			var vi:Null<Int> =
+			{
+				if (dupls != 0)
+					colorInsts[tileSeq[i]]
+				else if (dupls == 0 && colorInsts[tileSeq[i]] <= 1)
+					null
+				else
+					colorInsts[tileSeq[i]];
+			};
 
-			var spt = new Light((FlxG.random.int(0, 15) * 30), (FlxG.random.int(0, 8) * 30), i, visualIndex);
+			// I'm just gonna keep it this way because it's too much of a pain in the ass to have FlxNestedTexts
+			var spt = new Light((FlxG.random.int(0, 15) * 30), (FlxG.random.int(0, 8) * 30), i, vi);
 
 			while (spt.overlaps(player))
 				spt.setPosition((FlxG.random.int(0, 15) * 30), (FlxG.random.int(0, 8) * 30));
@@ -256,6 +252,7 @@ class Light extends FlxNestedSprite
 {
 	public var index:Int;
 	public var clr:LightColor;
+	public var used:Bool = false;
 
 	var txt:FlxNestedTextSprite;
 
@@ -269,13 +266,12 @@ class Light extends FlxNestedSprite
 		setSize(16, 16);
 		centerOffsets(true);
 
-		if (visualIndex != null)
+		if (visualIndex != null) 
 		{
 			txt = new FlxNestedTextSprite(Std.string(visualIndex), FlxAssets.FONT_DEFAULT, 10, 0, FlxColor.WHITE, -1, "center", 0);
-
-			add(txt);
 			txt.relativeX = (width / 2) - (txt.width / 2);
 			txt.relativeY = (height / 2) - (txt.height / 2);
+			add(txt);
 		}
 	}
 }
