@@ -1,5 +1,6 @@
 package;
 
+import flixel.system.FlxSound;
 import flixel.text.FlxText;
 import flixel.tweens.FlxEase;
 import flixel.tweens.FlxTween;
@@ -17,11 +18,12 @@ import flixel.util.FlxTimer;
 class PlayState extends FlxState
 {
 	var yeti:Yeti;
+	var loseJingle:FlxSound = new FlxSound();
 
 	var player:Player;
 
 	var board:FlxNestedSprite;
-	var spots:FlxTypedGroup<Light>;
+	var spots:FlxTypedGroup<Icicle>;
 
 	var tileSeq:Array<LightColor>;
 	var allColors:Array<LightColor> = [RED, BLUE, GREEN];
@@ -38,7 +40,17 @@ class PlayState extends FlxState
 
 	override function create()
 	{
-		spots = new FlxTypedGroup<Light>();
+		if (FlxG.sound.music == null)
+			FlxG.sound.playMusic('assets/music/play_theme.mp3', 0.35);
+
+		loseJingle.loadStream(AssetPaths.lose_jingle__mp3, false, false, () -> {
+			FlxG.switchState(new Lose());
+		});
+
+		var bg = new FlxSprite('assets/images/bg.png');
+		add(bg);
+		
+		spots = new FlxTypedGroup<Icicle>();
 		add(spots);
 		
 		player = new Player();
@@ -52,16 +64,21 @@ class PlayState extends FlxState
 		board.screenCenter(X);
 		for (i in 0...3)
 		{
-			var s = new Display(0, 0, 'assets/images/circle_display.png');
-			s.color = s.clr = switch i
-			{
-				case 0: RED;
-				case 1: BLUE;
-				case 2: GREEN;
-				default: RED;
+			var s = new Display(
+				switch i {
+					case 0: RED;
+					case 1: BLUE;
+					case 2: GREEN;
+					default: RED;
+				}
+			);
+			s.relativeX = switch i {
+				case 0: 10;
+				case 1: 24;
+				case 2: 38;
+				default: 0;
 			};
-			s.relativeX = i * (board.width / 3);
-			s.relativeY = board.width / 8;
+			s.relativeY = 10;
 
 			board.add(s);
 			s.visible = false;
@@ -84,41 +101,44 @@ class PlayState extends FlxState
 		scoreText.text = Std.string(score);
 
 		FlxG.overlap(player, spots, executeSpotOverlap, processSpotOverlap);
-		FlxG.overlap(player, yeti, executeYetiKill, processYetiKill);
+		FlxG.overlap(player, yeti, executeYetiKill, function(p:Player, y:Yeti) {return y.state == y.hunt;});
 
 		super.update(elapsed);
 	}
 
-	function executeYetiKill(player:FlxSprite, y:Yeti)
+	function executeYetiKill(player:Player, y:Yeti)
 	{
-		FlxG.switchState(new Lose());
+		if (!loseJingle.playing)
+		{
+			FlxG.sound.music.stop();
+			
+			forEach((child) -> {
+				child.active = false;
+			}, true);
+			loseJingle.play();
+		}
 	}
 
-	function processYetiKill(player:FlxSprite, y:Yeti):Bool
-	{
-		return yeti.state == yeti.hunt;
-	}
-
-	function executeSpotOverlap(p:FlxSprite, s:Light)
+	function executeSpotOverlap(p:Player, s:Icicle)
 	{
 		s.allowCollisions = NONE;
 		s.animation.finishCallback = (n) ->
 		{
-			// can't destroy these guys, causes a crash
 			if (n == 'shatter')
 				s.kill();
 			if (spots.getFirstAlive() == null)
 			{
+				FlxG.sound.play('assets/sounds/win_jingle.mp3', 0.5);
 				yeti.animation.play('freeze', true);
 				score++;
-				boardReturn(true);
+				returnBoard();
 			}
 		}
 		s.animation.play('shatter');
 		iSpot++;
 	}
 
-	function processSpotOverlap(p:FlxSprite, s:Light):Bool
+	function processSpotOverlap(p:Player, s:Icicle):Bool
 	{
 		if (s.clr == tileSeq[iSpot] && s.index == iSpot)
 		{
@@ -126,10 +146,10 @@ class PlayState extends FlxState
 		}
 		else
 		{
-			if (seqMax > 0)
+			if (seqMax > 1)
 				seqMax--;
 
-			boardReturn(false);
+			returnBoard();
 			for (i in spots)
 				i.destroy();
 
@@ -145,7 +165,7 @@ class PlayState extends FlxState
 		for (i in 0...seqMax)
 			tileSeq.push(FlxG.random.getObject(allColors));
 		
-		if (seqMax < 90)
+		if (seqMax < 26)
 			seqMax++;
 			
 		playBoard();
@@ -158,7 +178,8 @@ class PlayState extends FlxState
 			var l:Display = cast light;
 			if (l.clr == tileSeq[lightsShown] && !light.visible)
 			{
-				light.visible = true;
+				l.sf.play();
+				l.visible = true;
 				break;
 			}
 		}
@@ -218,7 +239,7 @@ class PlayState extends FlxState
 			};
 
 			// I'm just gonna keep it this way because it's too much of a pain in the ass to have FlxNestedTexts
-			var spt = new Light((FlxG.random.int(0, 15) * 30), (FlxG.random.int(0, 8) * 30), i, vi);
+			var spt = new Icicle((FlxG.random.int(0, 15) * 30), (FlxG.random.int(0, 8) * 30), i, vi);
 
 			while (spt.overlaps(player))
 				spt.setPosition((FlxG.random.int(0, 15) * 30), (FlxG.random.int(0, 8) * 30));
@@ -230,9 +251,9 @@ class PlayState extends FlxState
 		}
 	}
 
-	function boardReturn(success:Bool)
+	function returnBoard()
 	{
-		if (success)
+		if (spots.getFirstAlive() == null)
 			yeti.state = yeti.waitForStart;
 		
 		iSpot = 0;
@@ -246,9 +267,24 @@ class PlayState extends FlxState
 class Display extends FlxNestedSprite
 {
 	public var clr:LightColor;
+	public var sf:FlxSound;
+
+	public function new(clr:LightColor) {
+		super(0, 0, 'assets/images/circle_display.png');
+		
+		color = this.clr = clr;
+
+		sf = new FlxSound().loadStream('assets/sounds/${
+			switch clr {
+				case RED:'red';
+				case BLUE:'blue';
+				case GREEN:'green';
+			}
+		}.mp3');
+	}
 }
 
-class Light extends FlxNestedSprite
+class Icicle extends FlxNestedSprite
 {
 	public var index:Int;
 	public var clr:LightColor;

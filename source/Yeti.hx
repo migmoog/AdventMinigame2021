@@ -38,8 +38,8 @@ class Yeti extends FlxSprite
 		animation.finishCallback = finishAnim;
 		animation.play('freeze');
 
-		setSize(36, 48);
-		centerOffsets();
+		setSize(18, 28);
+		offset.set(14, 19);
 		drag.set(500, 500);
 
 		state = waitForStart;
