@@ -124,6 +124,7 @@ class PlayState extends FlxState
 			
 			forEach((child) -> {
 				child.active = false;
+				FlxTween.cancelTweensOf(child);
 			}, true);
 			
 			var loseText:FlxText = new FlxText(0, 0, 0, "YOU WERE DISEMBOWELED BY THE YETI\n(click to try again)", 16);
@@ -135,15 +136,8 @@ class PlayState extends FlxState
 			add(loseText);
 
 			FlxTween.tween(loseText, {'scale.x': 1, 'scale.y': 1}, 0.4, {
-				onStart: (_) ->
-				{
-					loseText.visible = true;
-				},
-				onUpdate: (_) ->
-				{
-					if (FlxG.mouse.pressed)
-						FlxG.resetState();
-				},
+				onStart: (_) -> loseText.visible = true,
+				onUpdate: (_) -> if (FlxG.mouse.pressed) FlxG.resetState(),
 				ease: FlxEase.quadIn
 			});
 			
@@ -163,7 +157,7 @@ class PlayState extends FlxState
 				FlxG.sound.play('assets/sounds/win_jingle.mp3', 0.5);
 				yeti.animation.play('freeze', true);
 				score++;
-				lightShowTime += 0.15;
+				lightShowTime += 0.05;
 				returnBoard();
 			}
 		}
@@ -182,6 +176,7 @@ class PlayState extends FlxState
 		{
 			if (seqMax > 1)
 				seqMax--;
+			lightShowTime -= 0.05;
 
 			returnBoard();
 			for (i in spots)
@@ -270,22 +265,35 @@ class PlayState extends FlxState
 				else
 					colorInsts[tileSeq[i]];
 
-			var spt = spots.recycle(Icicle, () -> new Icicle((FlxG.random.int(0, 15) * 30), (FlxG.random.int(0, 8) * 30), i, vi));
+			var spt = spots.recycle(
+				Icicle, 
+				() -> new Icicle(FlxG.random.int(0, 15) * 30, FlxG.random.int(0, 8) * 30, i, vi)
+			);
 			if (spt.used) {
-				spt.allowCollisions = ANY;
 				spt.setPosition((FlxG.random.int(0, 15) * 30), (FlxG.random.int(0, 8) * 30));
 				spt.index = i;
 				spt.txt.text = vi != null ? Std.string(vi) : ' ';
 			}
-
-			while (spt.overlaps(player))
+			
+			while (checkAABB(spt))
 				spt.setPosition((FlxG.random.int(0, 15) * 30), (FlxG.random.int(0, 8) * 30));
+			spt.allowCollisions = ANY;
 
 			spt.color = spt.clr = tileSeq[i];
 			spots.add(spt);
 			spt.animation.play('emerge');
 			prevClr = tileSeq[i];
 		}
+	}
+
+	function checkAABB(ice:Icicle):Bool 
+	{
+		var right = ice.x + ice.width >= player.x;
+		var left = ice.x <= player.x + player.width;
+		var up = ice.y + ice.height >= player.y;
+		var down = ice.y <= player.y + player.height;
+		
+		return right && left && up && down;
 	}
 
 	function returnBoard()
@@ -347,8 +355,10 @@ enum abstract LightColor(FlxColor) to FlxColor
 	var BLUE = FlxColor.BLUE;
 	var GREEN = FlxColor.GREEN;
 
-	@:to function toString() {
-		return switch (this) {
+	@:to function toString() 
+	{
+		return switch (this) 
+		{
 			case RED: 'red';
 			case BLUE: 'blue';
 			case GREEN: 'green';
