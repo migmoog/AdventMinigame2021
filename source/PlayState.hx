@@ -313,6 +313,7 @@ class Display extends FlxNestedSprite
 		super(0, 0, 'assets/images/circle_display.png');
 		color = this.clr = clr;
 		sf = new FlxSound().loadStream('assets/sounds/lights/${clr}.mp3');
+		sf.volume = 0.55;
 	}
 }
 
