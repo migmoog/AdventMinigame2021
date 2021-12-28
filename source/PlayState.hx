@@ -275,7 +275,7 @@ class PlayState extends FlxState
 				spt.txt.text = vi != null ? Std.string(vi) : ' ';
 			}
 			
-			while (checkAABB(spt))
+			while (checkGrid(spt))
 				spt.setPosition((FlxG.random.int(0, 15) * 30), (FlxG.random.int(0, 8) * 30));
 			spt.allowCollisions = ANY;
 
@@ -286,12 +286,20 @@ class PlayState extends FlxState
 		}
 	}
 
-	function checkAABB(ice:Icicle):Bool 
+	function checkGrid(ice:Icicle):Bool {
+		for (i in spots)
+			if (checkAABB(ice, i))
+				return true;
+
+		return checkAABB(ice, player);
+	}
+
+	function checkAABB(ice:Icicle, object:FlxSprite):Bool 
 	{
-		var right = ice.x + ice.width >= player.x;
-		var left = ice.x <= player.x + player.width;
-		var up = ice.y + ice.height >= player.y;
-		var down = ice.y <= player.y + player.height;
+		var right = ice.x + ice.width >= object.x;
+		var left = ice.x <= object.x + object.width;
+		var up = ice.y + ice.height >= object.y;
+		var down = ice.y <= object.y + object.height;
 		
 		return right && left && up && down;
 	}
