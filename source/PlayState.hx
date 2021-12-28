@@ -262,17 +262,13 @@ class PlayState extends FlxState
 				dupls = 0;
 
 			var vi:Null<Int> =
-			{
 				if (dupls != 0)
 					colorInsts[tileSeq[i]]
 				else if (dupls == 0 && colorInsts[tileSeq[i]] <= 1)
 					null
 				else
 					colorInsts[tileSeq[i]];
-			};
 
-			// I'm just gonna keep it this way because it's too much of a pain in the ass to have FlxNestedTexts
-			// var spt = new Icicle((FlxG.random.int(0, 15) * 30), (FlxG.random.int(0, 8) * 30), i, vi);
 			var spt = spots.recycle(Icicle, () -> new Icicle((FlxG.random.int(0, 15) * 30), (FlxG.random.int(0, 8) * 30), i, vi));
 			if (spt.used) {
 				spt.allowCollisions = ANY;
@@ -341,10 +337,7 @@ class Icicle extends FlxNestedSprite
 		add(txt);
 	}
 
-	override function kill() {
-		used = true;
-		super.kill();
-	}
+	override function kill() { used = true; super.kill(); }
 }
 
 enum abstract LightColor(FlxColor) to FlxColor

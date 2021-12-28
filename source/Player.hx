@@ -6,7 +6,7 @@ import flixel.FlxSprite;
 class Player extends FlxSprite {
 	static inline final SPEED:Float = 100.5;
     
-    public function new(x:Float = 0, y:Float = 0) 
+    public function new(x:Float = 140, y:Float = 120) 
     {
         super(x, y);
         loadGraphic('assets/images/player.png', true, 16, 16);
