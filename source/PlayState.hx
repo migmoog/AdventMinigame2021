@@ -5,7 +5,6 @@ import flixel.text.FlxText;
 import flixel.tweens.FlxEase;
 import flixel.tweens.FlxTween;
 import flixel.system.FlxAssets;
-import FlxNestedTextSprite;
 import flixel.group.FlxGroup;
 import flixel.FlxG;
 import flixel.FlxSprite;
@@ -38,13 +37,16 @@ class PlayState extends FlxState
 
 	var iSpot:Int = 0;
 
+	var dead:Bool = false;
+
 	override function create()
 	{
 		if (FlxG.sound.music == null)
 			FlxG.sound.playMusic('assets/music/play_theme.mp3', 0.35);
 
 		loseJingle.loadStream(AssetPaths.lose_jingle__mp3, false, false, () -> {
-			FlxG.switchState(new Lose());
+			dead = true;
+			FlxG.sound.music = null;
 		});
 
 		var bg = new FlxSprite('assets/images/bg.png');
@@ -95,13 +97,21 @@ class PlayState extends FlxState
 
 	override function update(elapsed:Float)
 	{
-		FlxSpriteUtil.bound(yeti, 0, FlxG.width, 0, FlxG.height);
-		FlxSpriteUtil.bound(player, 0, FlxG.width, 0, FlxG.height);
+		if (!dead) {
+			FlxSpriteUtil.bound(yeti, 0, FlxG.width, 0, FlxG.height);
+			FlxSpriteUtil.bound(player, 0, FlxG.width, 0, FlxG.height);
 
-		scoreText.text = Std.string(score);
+			scoreText.text = Std.string(score);
 
-		FlxG.overlap(player, spots, executeSpotOverlap, processSpotOverlap);
-		FlxG.overlap(player, yeti, executeYetiKill, function(p:Player, y:Yeti) {return y.state == y.hunt;});
+			FlxG.overlap(player, spots, executeSpotOverlap, processSpotOverlap);
+			FlxG.overlap(player, yeti, executeYetiKill, function(p:Player, y:Yeti)
+			{
+				return y.state == y.hunt;
+			});
+		}
+		
+		if (dead && FlxG.mouse.justPressed)
+			FlxG.resetState(); 
 
 		super.update(elapsed);
 	}
@@ -115,6 +125,28 @@ class PlayState extends FlxState
 			forEach((child) -> {
 				child.active = false;
 			}, true);
+			
+			var loseText:FlxText = new FlxText(0, 0, 0, "YOU WERE DISEMBOWELED BY THE YETI\n(click to try again)", 16);
+			loseText.alignment = CENTER;
+			loseText.scale.set(0.1, 0.1);
+			loseText.visible = false;
+			loseText.screenCenter();
+			loseText.color = tileSeq[iSpot];
+			add(loseText);
+
+			FlxTween.tween(loseText, {'scale.x': 1, 'scale.y': 1}, 0.4, {
+				onStart: (_) ->
+				{
+					loseText.visible = true;
+				},
+				onUpdate: (_) ->
+				{
+					if (FlxG.mouse.pressed)
+						FlxG.resetState();
+				},
+				ease: FlxEase.quadIn
+			});
+			
 			loseJingle.play();
 		}
 	}
@@ -135,6 +167,7 @@ class PlayState extends FlxState
 			}
 		}
 		s.animation.play('shatter');
+		FlxG.sound.play('assets/sounds/shatter.mp3', 1);
 		iSpot++;
 	}
 
@@ -239,7 +272,14 @@ class PlayState extends FlxState
 			};
 
 			// I'm just gonna keep it this way because it's too much of a pain in the ass to have FlxNestedTexts
-			var spt = new Icicle((FlxG.random.int(0, 15) * 30), (FlxG.random.int(0, 8) * 30), i, vi);
+			// var spt = new Icicle((FlxG.random.int(0, 15) * 30), (FlxG.random.int(0, 8) * 30), i, vi);
+			var spt = spots.recycle(Icicle, () -> new Icicle((FlxG.random.int(0, 15) * 30), (FlxG.random.int(0, 8) * 30), i, vi));
+			if (spt.used) {
+				spt.allowCollisions = ANY;
+				spt.setPosition((FlxG.random.int(0, 15) * 30), (FlxG.random.int(0, 8) * 30));
+				spt.index = i;
+				spt.txt.text = vi != null ? Std.string(vi) : ' ';
+			}
 
 			while (spt.overlaps(player))
 				spt.setPosition((FlxG.random.int(0, 15) * 30), (FlxG.random.int(0, 8) * 30));
@@ -271,16 +311,8 @@ class Display extends FlxNestedSprite
 
 	public function new(clr:LightColor) {
 		super(0, 0, 'assets/images/circle_display.png');
-		
 		color = this.clr = clr;
-
-		sf = new FlxSound().loadStream('assets/sounds/${
-			switch clr {
-				case RED:'red';
-				case BLUE:'blue';
-				case GREEN:'green';
-			}
-		}.mp3');
+		sf = new FlxSound().loadStream('assets/sounds/lights/${clr}.mp3');
 	}
 }
 
@@ -290,7 +322,7 @@ class Icicle extends FlxNestedSprite
 	public var clr:LightColor;
 	public var used:Bool = false;
 
-	var txt:FlxNestedTextSprite;
+	public var txt:FlxNestedText;
 
 	public function new(x:Float, y:Float, ?index:Int, ?visualIndex:Int)
 	{
@@ -302,13 +334,15 @@ class Icicle extends FlxNestedSprite
 		setSize(16, 16);
 		centerOffsets(true);
 
-		if (visualIndex != null) 
-		{
-			txt = new FlxNestedTextSprite(Std.string(visualIndex), FlxAssets.FONT_DEFAULT, 10, 0, FlxColor.WHITE, -1, "center", 0);
-			txt.relativeX = (width / 2) - (txt.width / 2);
-			txt.relativeY = (height / 2) - (txt.height / 2);
-			add(txt);
-		}
+		txt = new FlxNestedText(0,0,0, visualIndex != null ? Std.string(visualIndex) : ' ', 8);
+		txt.relativeX = (width / 2) - (txt.width / 2);
+		txt.relativeY = (height / 2) - (txt.height / 2);
+		add(txt);
+	}
+
+	override function kill() {
+		used = true;
+		super.kill();
 	}
 }
 
@@ -317,4 +351,13 @@ enum abstract LightColor(FlxColor) to FlxColor
 	var RED = FlxColor.RED;
 	var BLUE = FlxColor.BLUE;
 	var GREEN = FlxColor.GREEN;
+
+	@:to function toString() {
+		return switch (this) {
+			case RED: 'red';
+			case BLUE: 'blue';
+			case GREEN: 'green';
+			default: 'unmatched';
+		}
+	}
 }
