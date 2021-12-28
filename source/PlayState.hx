@@ -163,6 +163,7 @@ class PlayState extends FlxState
 				FlxG.sound.play('assets/sounds/win_jingle.mp3', 0.5);
 				yeti.animation.play('freeze', true);
 				score++;
+				lightShowTime += 0.15;
 				returnBoard();
 			}
 		}
@@ -211,7 +212,7 @@ class PlayState extends FlxState
 			var l:Display = cast light;
 			if (l.clr == tileSeq[lightsShown] && !light.visible)
 			{
-				l.sf.play();
+				l.sf.play(true);
 				l.visible = true;
 				break;
 			}
