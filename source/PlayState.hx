@@ -184,7 +184,7 @@ class PlayState extends FlxState
 
 			returnBoard();
 			for (i in spots)
-				i.destroy();
+				i.kill();
 
 			return false;
 		}
