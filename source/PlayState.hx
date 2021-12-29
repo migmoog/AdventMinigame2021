@@ -275,33 +275,13 @@ class PlayState extends FlxState
 				spt.txt.text = vi != null ? Std.string(vi) : ' ';
 			}
 			
-			while (checkGrid(spt))
-				spt.setPosition((FlxG.random.int(0, 15) * 30), (FlxG.random.int(0, 8) * 30));
-			spt.allowCollisions = ANY;
 
 			spt.color = spt.clr = tileSeq[i];
 			spots.add(spt);
+			spt.animation.finishCallback = (n:String) -> if (n == 'emerge') spt.allowCollisions = ANY;
 			spt.animation.play('emerge');
 			prevClr = tileSeq[i];
 		}
-	}
-
-	function checkGrid(ice:Icicle):Bool {
-		for (i in spots)
-			if (checkAABB(ice, i))
-				return true;
-
-		return checkAABB(ice, player);
-	}
-
-	function checkAABB(ice:Icicle, object:FlxSprite):Bool 
-	{
-		var right = ice.x + ice.width >= object.x;
-		var left = ice.x <= object.x + object.width;
-		var up = ice.y + ice.height >= object.y;
-		var down = ice.y <= object.y + object.height;
-		
-		return right && left && up && down;
 	}
 
 	function returnBoard()
