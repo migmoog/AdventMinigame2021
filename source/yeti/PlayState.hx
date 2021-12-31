@@ -64,7 +64,7 @@ class PlayState extends FlxState
 		yeti.screenCenter();
 		add(yeti);
 
-		board = new FlxNestedSprite(0, 0, Global.asset('assets/images/board.png'));
+		board = new FlxNestedSprite(0, -20, Global.asset('assets/images/board.png'));
 		board.screenCenter(X);
 		for (i in 0...3)
 		{
@@ -92,7 +92,10 @@ class PlayState extends FlxState
 		scoreText = new FlxText(Global.width - 16, 0, 0, Std.string(score));
 		add(scoreText);
 
-		pickSequence();
+		FlxTween.tween(board, {y: 0}, 1.8, {
+			onComplete: (_) -> pickSequence(),
+			ease: FlxEase.elasticInOut
+		});
 
 		super.create();
 	}
