@@ -35,6 +35,6 @@ class BootState extends flixel.FlxState
 	{
 		super.update(elapsed);
 		
-		Global.switchState(new #if SHARE RecordIntroState #else PlayState #end());
+		Global.switchState(new #if SHARE RecordIntroState #else yeti.PlayState #end());
 	}
 }

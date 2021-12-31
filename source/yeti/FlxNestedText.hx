@@ -1,4 +1,4 @@
-package;
+package yeti;
 
 import flixel.addons.display.FlxNestedSprite;
 import flash.display.BitmapData;

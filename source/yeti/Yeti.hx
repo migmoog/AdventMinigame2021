@@ -1,3 +1,5 @@
+package yeti;
+
 import flixel.util.FlxSignal;
 import flixel.util.FlxColor;
 import flixel.tweens.FlxTween;

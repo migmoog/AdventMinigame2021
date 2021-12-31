@@ -1,3 +1,5 @@
+package yeti;
+
 import ui.Controls;
 import flixel.math.FlxPoint;
 import flixel.util.FlxColor;

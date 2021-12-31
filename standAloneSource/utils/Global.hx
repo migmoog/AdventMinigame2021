@@ -3,6 +3,7 @@ package utils;
 import flixel.FlxCamera;
 import flixel.FlxG;
 import flixel.FlxState;
+import flixel.tweens.FlxTween;
 import flixel.util.FlxTimer;
 
 /**
@@ -23,6 +24,16 @@ class Global
     {
         FlxG.switchState(state);
     }
+    
+    static public function resetState()
+    {
+		FlxG.resetState();
+    }
+    
+	static public function cancelTweensOf(object, ?fieldPaths)
+	{
+		FlxTween.cancelTweensOf(object, fieldPaths);
+	}
     
     inline static public function asset(path:String) return path;
 }

@@ -1,4 +1,4 @@
-package;
+package yeti;
 
 import ui.Controls;
 
@@ -46,7 +46,7 @@ class PlayState extends FlxState
 		if (FlxG.sound.music == null)
 			FlxG.sound.playMusic(Global.asset('assets/music/play_theme.mp3'), 0.35);
 
-		loseJingle.loadStream(Global.asset("assets/sounds/lose_jingle.mp3"), false, false, () -> {
+		loseJingle.loadEmbedded(Global.asset("assets/sounds/lose_jingle.mp3"), false, false, () -> {
 			dead = true;
 			FlxG.sound.music = null;
 		});
@@ -112,8 +112,8 @@ class PlayState extends FlxState
 			});
 		}
 		
-		if (dead && getPressReset())
-			FlxG.resetState(); 
+		if (dead && Controls.pressed.A)
+			Global.resetState(); 
 
 		super.update(elapsed);
 	}
@@ -129,7 +129,13 @@ class PlayState extends FlxState
 				FlxTween.cancelTweensOf(child);
 			}, true);
 			
-			var loseText:FlxText = new FlxText(0, 0, 0, "YOU WERE DISEMBOWELED BY THE YETI\n(click to try again)", 16);
+			var msg = "YOU WERE DISEMBOWELED BY THE YETI\n" + switch (Controls.mode)
+			{
+				case Touch: "(tap to try again)";// not implemented
+				case Keys: "(Z to try again)";
+				case Gamepad: "(A to try again)";
+			}
+			var loseText:FlxText = new FlxText(0, 0, 0, msg, 16);
 			loseText.alignment = CENTER;
 			loseText.scale.set(0.1, 0.1);
 			loseText.visible = false;
@@ -139,17 +145,12 @@ class PlayState extends FlxState
 
 			FlxTween.tween(loseText, {'scale.x': 1, 'scale.y': 1}, 0.4, {
 				onStart: (_) -> loseText.visible = true,
-				onUpdate: (_) -> if (getPressReset()) FlxG.resetState(),
+				onUpdate: (_) -> if (Controls.pressed.A) Global.resetState(),
 				ease: FlxEase.quadIn
 			});
 			
 			loseJingle.play();
 		}
-	}
-	
-	inline function getPressReset()
-	{
-		return FlxG.mouse.justPressed || Controls.pressed.A;
 	}
 
 	function executeSpotOverlap(p:Player, s:Icicle)
@@ -312,7 +313,7 @@ class Display extends FlxNestedSprite
 	public function new(clr:LightColor) {
 		super(0, 0, Global.asset('assets/images/circle_display.png'));
 		color = this.clr = clr;
-		sf = new FlxSound().loadStream(Global.asset('assets/sounds/lights/${clr}.mp3'));
+		sf = new FlxSound().loadEmbedded(Global.asset('assets/sounds/lights/${clr}.mp3'));
 		sf.volume = 0.55;
 	}
 }

@@ -1,3 +1,5 @@
+package yeti;
+
 import ui.Controls;
 import flixel.FlxG;
 import flixel.util.FlxColor;
@@ -13,9 +15,9 @@ class Lose extends FlxState
 		var msg = "YOU WERE DISEMBOWELED BY THE YETI\n"
             + switch (Controls.mode)
             {
-			    case Touch: "(tap to try again)"
-			    case Keys: "(Z to try again)"
-			    case Gamepad: "(A to try again)"
+                case Touch: "(tap to try again)"
+                case Keys: "(Z to try again)"
+                case Gamepad: "(A to try again)"
             }
         lostTxt = new FlxText(0, 0, 0, msg, 16);
         lostTxt.alignment = CENTER;
@@ -28,7 +30,7 @@ class Lose extends FlxState
 
     override function update(elapsed:Float) 
     {
-        if (FlxG.mouse.justPressed || Controls.pressed.A)
+        if (Controls.pressed.A)
             Global.switchState(new PlayState());
         
         super.update(elapsed);
