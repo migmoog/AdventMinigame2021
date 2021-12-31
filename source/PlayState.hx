@@ -1,5 +1,7 @@
 package;
 
+import ui.Controls;
+
 import flixel.system.FlxSound;
 import flixel.text.FlxText;
 import flixel.tweens.FlxEase;
@@ -42,14 +44,14 @@ class PlayState extends FlxState
 	override function create()
 	{
 		if (FlxG.sound.music == null)
-			FlxG.sound.playMusic('assets/music/play_theme.mp3', 0.35);
+			FlxG.sound.playMusic(Global.asset('assets/music/play_theme.mp3'), 0.35);
 
-		loseJingle.loadStream(AssetPaths.lose_jingle__mp3, false, false, () -> {
+		loseJingle.loadStream(Global.asset("assets/sounds/lose_jingle.mp3"), false, false, () -> {
 			dead = true;
 			FlxG.sound.music = null;
 		});
 
-		var bg = new FlxSprite('assets/images/bg.png');
+		var bg = new FlxSprite(Global.asset('assets/images/bg.png'));
 		add(bg);
 		
 		spots = new FlxTypedGroup<Icicle>();
@@ -62,7 +64,7 @@ class PlayState extends FlxState
 		yeti.screenCenter();
 		add(yeti);
 
-		board = new FlxNestedSprite(0, 0, 'assets/images/board.png');
+		board = new FlxNestedSprite(0, 0, Global.asset('assets/images/board.png'));
 		board.screenCenter(X);
 		for (i in 0...3)
 		{
@@ -87,7 +89,7 @@ class PlayState extends FlxState
 		}
 		add(board);
 
-		scoreText = new FlxText(FlxG.width - 16, 0, 0, Std.string(score));
+		scoreText = new FlxText(Global.width - 16, 0, 0, Std.string(score));
 		add(scoreText);
 
 		pickSequence();
@@ -98,8 +100,8 @@ class PlayState extends FlxState
 	override function update(elapsed:Float)
 	{
 		if (!dead) {
-			FlxSpriteUtil.bound(yeti, 0, FlxG.width, 0, FlxG.height);
-			FlxSpriteUtil.bound(player, 0, FlxG.width, 0, FlxG.height);
+			FlxSpriteUtil.bound(yeti, 0, Global.width, 0, Global.height);
+			FlxSpriteUtil.bound(player, 0, Global.width, 0, Global.height);
 
 			scoreText.text = Std.string(score);
 
@@ -110,7 +112,7 @@ class PlayState extends FlxState
 			});
 		}
 		
-		if (dead && FlxG.mouse.justPressed)
+		if (dead && getPressReset())
 			FlxG.resetState(); 
 
 		super.update(elapsed);
@@ -137,12 +139,17 @@ class PlayState extends FlxState
 
 			FlxTween.tween(loseText, {'scale.x': 1, 'scale.y': 1}, 0.4, {
 				onStart: (_) -> loseText.visible = true,
-				onUpdate: (_) -> if (FlxG.mouse.pressed) FlxG.resetState(),
+				onUpdate: (_) -> if (getPressReset()) FlxG.resetState(),
 				ease: FlxEase.quadIn
 			});
 			
 			loseJingle.play();
 		}
+	}
+	
+	inline function getPressReset()
+	{
+		return FlxG.mouse.justPressed || Controls.pressed.A;
 	}
 
 	function executeSpotOverlap(p:Player, s:Icicle)
@@ -154,7 +161,7 @@ class PlayState extends FlxState
 				s.kill();
 			if (spots.getFirstAlive() == null)
 			{
-				FlxG.sound.play('assets/sounds/win_jingle.mp3', 0.5);
+				FlxG.sound.play(Global.asset('assets/sounds/win_jingle.mp3'), 0.5);
 				yeti.animation.play('freeze', true);
 				score++;
 				lightShowTime += 0.05;
@@ -162,7 +169,7 @@ class PlayState extends FlxState
 			}
 		}
 		s.animation.play('shatter');
-		FlxG.sound.play('assets/sounds/shatter.mp3', 1);
+		FlxG.sound.play(Global.asset('assets/sounds/shatter.mp3'), 1);
 		iSpot++;
 	}
 
@@ -303,9 +310,9 @@ class Display extends FlxNestedSprite
 	public var sf:FlxSound;
 
 	public function new(clr:LightColor) {
-		super(0, 0, 'assets/images/circle_display.png');
+		super(0, 0, Global.asset('assets/images/circle_display.png'));
 		color = this.clr = clr;
-		sf = new FlxSound().loadStream('assets/sounds/lights/${clr}.mp3');
+		sf = new FlxSound().loadStream(Global.asset('assets/sounds/lights/${clr}.mp3'));
 		sf.volume = 0.55;
 	}
 }
@@ -321,7 +328,7 @@ class Icicle extends FlxNestedSprite
 	public function new(x:Float, y:Float, ?index:Int, ?visualIndex:Int)
 	{
 		super(x, y);
-		loadGraphic('assets/images/icicle.png', true, 30, 30);
+		loadGraphic(Global.asset('assets/images/icicle.png'), true, 30, 30);
 		animation.add('emerge', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], 15, false);
 		animation.add('shatter', [10, 11, 12, 13, 14], 15, false);
 		this.index = index;

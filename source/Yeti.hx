@@ -26,7 +26,7 @@ class Yeti extends FlxSprite
 	public function new(x:Float = 0, y:Float = 0, player:FlxSprite)
 	{
 		super(x, y);
-		loadGraphic(AssetPaths.yeti__png, true, 48, 64);
+		loadGraphic(Global.asset("assets/images/yeti.png"), true, 48, 64);
 		setFacingFlip(LEFT, false, false);
 		setFacingFlip(RIGHT, true, false);
 

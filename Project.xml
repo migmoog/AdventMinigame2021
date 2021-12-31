@@ -31,7 +31,11 @@
 
 	<set name="BUILD_DIR" value="export" />
 	<source path="source" />
+	<classpath name="standAloneSource" />
 	<assets path="assets" />
+	
+	<!-- Directive enabled when playing the advent game without launching via advent -->
+	<define name="STAND_ALONE" />
 
 	<!-- _______________________________ Libraries ______________________________ -->
 

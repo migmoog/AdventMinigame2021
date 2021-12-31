@@ -1,3 +1,4 @@
+import ui.Controls;
 import flixel.FlxG;
 import flixel.util.FlxColor;
 import flixel.text.FlxText;
@@ -9,7 +10,14 @@ class Lose extends FlxState
     
     override function create() 
     {
-        lostTxt = new FlxText(0, 0, 0, "YOU WERE DISEMBOWELED BY THE YETI\n(click to try again)", 16);
+		var msg = "YOU WERE DISEMBOWELED BY THE YETI\n"
+            + switch (Controls.mode)
+            {
+			    case Touch: "(tap to try again)"
+			    case Keys: "(Z to try again)"
+			    case Gamepad: "(A to try again)"
+            }
+        lostTxt = new FlxText(0, 0, 0, msg, 16);
         lostTxt.alignment = CENTER;
         lostTxt.color = FlxColor.LIME;
         lostTxt.screenCenter();
@@ -20,8 +28,8 @@ class Lose extends FlxState
 
     override function update(elapsed:Float) 
     {
-        if (FlxG.mouse.justPressed)
-            FlxG.switchState(new PlayState());
+        if (FlxG.mouse.justPressed || Controls.pressed.A)
+            Global.switchState(new PlayState());
         
         super.update(elapsed);
     }

@@ -1,3 +1,4 @@
+import ui.Controls;
 import flixel.math.FlxPoint;
 import flixel.util.FlxColor;
 import flixel.FlxG;
@@ -9,7 +10,7 @@ class Player extends FlxSprite {
     public function new(x:Float = 140, y:Float = 120) 
     {
         super(x, y);
-        loadGraphic('assets/images/player.png', true, 16, 16);
+        loadGraphic(Global.asset('assets/images/player.png'), true, 16, 16);
 		animation.add('run', [0,1,2,3,4,5], 15);
 		setFacingFlip(LEFT, false, false);
 		setFacingFlip(RIGHT, true, false);
@@ -20,10 +21,10 @@ class Player extends FlxSprite {
 
     override function update(elapsed:Float) 
     {
-		var left:Bool = FlxG.keys.anyPressed([A, LEFT]);
-		var right:Bool = FlxG.keys.anyPressed([D, RIGHT]);
-		var up:Bool = FlxG.keys.anyPressed([W, UP]);
-		var down:Bool = FlxG.keys.anyPressed([S, DOWN]);
+		var left:Bool = Controls.pressed.LEFT;
+		var right:Bool = Controls.pressed.RIGHT;
+		var up:Bool = Controls.pressed.UP;
+		var down:Bool = Controls.pressed.DOWN;
 
 		if (up && down)
 			up = down = false;
