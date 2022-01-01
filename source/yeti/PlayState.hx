@@ -26,12 +26,13 @@ class PlayState extends FlxState
 	var board:FlxNestedSprite;
 	var spots:FlxTypedGroup<Icicle>;
 
-	var tileSeq:Array<LightColor>;
+	var tileSeq:Array<LightColor> = [];
 	var allColors:Array<LightColor> = [RED, BLUE, GREEN];
 	var seqMax:Int = 2;
 	var seqTimer:FlxTimer = new FlxTimer();
 
 	var score:Int = 0;
+	var multiplier:Int = 1;
 	var scoreText:FlxText;
 
 	var lightsShown:Int = 0;
@@ -89,7 +90,8 @@ class PlayState extends FlxState
 		}
 		add(board);
 
-		scoreText = new FlxText(Global.width - 16, 0, 0, Std.string(score));
+		scoreText = new FlxText(Global.width - 16, 0, 0, 'score: ${score}\n bonus: ${multiplier}');
+		scoreText.x = Global.width - (scoreText.width + 5);
 		add(scoreText);
 
 		FlxTween.tween(board, {y: 0}, 1.8, {
@@ -106,7 +108,7 @@ class PlayState extends FlxState
 			FlxSpriteUtil.bound(yeti, 0, Global.width, 0, Global.height);
 			FlxSpriteUtil.bound(player, 0, Global.width, 0, Global.height);
 
-			scoreText.text = Std.string(score);
+			scoreText.text = 'score: ${score}\n bonus: ${multiplier}';
 
 			FlxG.overlap(player, spots, executeSpotOverlap, processSpotOverlap);
 			FlxG.overlap(player, yeti, executeYetiKill, function(p:Player, y:Yeti)
@@ -167,8 +169,10 @@ class PlayState extends FlxState
 			{
 				FlxG.sound.play(Global.asset('assets/sounds/win_jingle.mp3'), 0.5);
 				yeti.animation.play('freeze', true);
-				score++;
+				score += multiplier;
 				lightShowTime += 0.05;
+				multiplier++;
+				
 				returnBoard();
 			}
 		}
@@ -189,6 +193,8 @@ class PlayState extends FlxState
 				seqMax--;
 			lightShowTime -= 0.05;
 
+			tileSeq = [];
+			multiplier = 1;
 			returnBoard();
 			for (i in spots)
 				i.kill();
@@ -200,9 +206,9 @@ class PlayState extends FlxState
 	function pickSequence()
 	{
 		FlxG.random.shuffle(allColors);
-		tileSeq = [];
+		// tileSeq = [];
 
-		for (i in 0...seqMax)
+		for (i in (tileSeq.length-1)...seqMax)
 			tileSeq.push(FlxG.random.getObject(allColors));
 		
 		if (seqMax < 26)
