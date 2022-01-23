@@ -24,6 +24,7 @@ class PlayState extends FlxState
 
 	var board:FlxNestedSprite;
 	var spots:FlxTypedGroup<Icicle>;
+	var spotCoords:Array<Array<Bool>>;
 
 	var tileSeq:Array<LightColor> = [];
 	var allColors:Array<LightColor> = [RED, BLUE, GREEN];
@@ -43,6 +44,8 @@ class PlayState extends FlxState
 
 	override function create()
 	{
+		resetSpotCoords();
+		
 		if (FlxG.sound.music == null)
 			FlxG.sound.playMusic(Global.asset('assets/music/play_theme.mp3'), 0.35);
 
@@ -218,6 +221,7 @@ class PlayState extends FlxState
 		if (seqMax < 26)
 			seqMax++;
 
+		resetSpotCoords();
 		playBoard();
 	}
 
@@ -280,10 +284,18 @@ class PlayState extends FlxState
 
 			var vi:Null<Int> = if (dupls != 0) colorInsts[tileSeq[i]] else if (dupls == 0 && colorInsts[tileSeq[i]] <= 1) null else colorInsts[tileSeq[i]];
 
-			var spt = spots.recycle(Icicle, () -> new Icicle(FlxG.random.int(0, 15) * 30, FlxG.random.int(0, 8) * 30, i, vi));
+			var x = FlxG.random.int(0, 15);
+			var y = FlxG.random.int(0, 8);
+			while (spotCoords[y][x]) {
+				x = FlxG.random.int(0, 15);
+				y = FlxG.random.int(0, 8);
+			}
+			spotCoords[y][x] = true;
+			
+			var spt = spots.recycle(Icicle, () -> new Icicle(x * 30, y * 30, i, vi));
 			if (spt.used)
 			{
-				spt.setPosition((FlxG.random.int(0, 15) * 30), (FlxG.random.int(0, 8) * 30));
+				spt.setPosition((x * 30), (y * 30));
 				spt.index = i;
 				spt.txt.text = vi != null ? Std.string(vi) : ' ';
 			}
@@ -306,6 +318,17 @@ class PlayState extends FlxState
 			onComplete: (_) -> pickSequence(),
 			ease: FlxEase.elasticInOut
 		});
+	}
+
+	function resetSpotCoords() {
+		spotCoords = [];
+		for (y in 0...9)
+		{
+			var row = [];
+			for (x in 0...16)
+				row.push(false);
+			spotCoords.push(row);
+		}
 	}
 }
 
